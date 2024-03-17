@@ -1,5 +1,5 @@
 #include <string.h> // Provides declarations for string handling functions like memset, strcpy, etc.
-#include <arpa/inet.h> // Defines operations for converting IP addresses from text to binary form and vice versa, such as inet_addr and inet_ntoa
+#include <arpa/inet.h> // converting IP addresses from text to binary form and vice versa, inet_addr and inet_ntoa
 #include <net/if.h> // Defines constants and structures needed for network interface operations, like struct ifreq used in ioctl calls
 #include <netdb.h>
 #include <netinet/tcp.h>
@@ -7,6 +7,9 @@
 
 #include "ClientSocket.h"
 
+// Declare the Init function which initializes the socket connection
+// Takes an IP address as a std::string and a port number as an int
+// Returns an int to indicate success or failure
 int ClientSocket::Init(std::string ip, int port) {
     if (is_initialized_) {
         return 0;
