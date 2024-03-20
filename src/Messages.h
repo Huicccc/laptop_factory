@@ -5,9 +5,9 @@
 
 class LaptopOrder {
 private:
-    int customer_id;
-    int order_number;
-    int laptop_type;
+    int customer_id; // customer id
+    int order_number; // # of orders issued by this customer so far
+    int laptop_type; // either 0 - regular or 1 - custom
 
 public:
     LaptopOrder();
@@ -39,11 +39,12 @@ public:
 
 class LaptopInfo {
 private:
-    int customer_id;
-    int order_number;
-    int laptop_type;
-    int engineer_id;
-    int expert_id;
+    int customer_id; // copied from the order
+    int order_number; // copied from the order
+    int laptop_type; // copied from the order
+    int engineer_id; // id of the engineer who created the laptop
+    int expert_id; // id of the expert who added a custom module
+                   // -1 indicates that there is no custom module
 
 public:
     LaptopInfo();

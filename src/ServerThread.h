@@ -2,7 +2,7 @@
 #define __SERVERTHREAD_H__
 
 #include <condition_variable>
-#include <future>
+#include <future> // std::promise
 #include <mutex>
 #include <queue>
 #include <thread>
@@ -12,7 +12,7 @@
 
 struct ExpertRequest {
     LaptopInfo laptop;
-    std::promise <LaptopInfo> prom;
+    std::promise <LaptopInfo> prom; // To make sure that the pair of regular engineer and the expert engineer who work on the same laptop can exchange the wake up handles and ids, you can design the request to include rich information in addition to the laptop information.
 };
 
 class LaptopFactory {

@@ -57,7 +57,16 @@ void ClientTimer::Merge(ClientTimer timer) {
     }
 }
 
-// Print the statistical results of the timing sessions
+/*
+Performance statistics
+Each customer thread should measure how much time it took for each order (i.e., latency, or elapsed time from issuing an order to receiving the laptop information) 
+using std::chrono::high resolution clock in a microsecond scale. This time period is the latency for an order. 
+Compute the mean latency, maximum latency, and minimum latency based on the measured time information for all orders. 
+For example, if you have 100 customers who place 100 orders each, then you should have 10,000 latency records to compute these numbers. 
+In addition, measure the throughput of your factory (server program) from your client program (i.e., orders/second). 
+Print these numbers at the end of each client program execution in the following tab separated format:
+[avg latency] [min latency] [max latency] [throughput]
+*/
 void ClientTimer::PrintStats() {
     std::cout << std::fixed << std::setprecision(3); // Set the decimal precision for output
     // Print the average time per operation
