@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     timer.Start(); // Start the timer for the whole operation
 
-    // Create and start client threads
+    // 1. The program should create the customer threads as many as the specified customer number.
     for (int i = 0; i < num_customers; i++) {
         auto client_cls = std::shared_ptr<ClientThreadClass>(new ClientThreadClass());
         std::thread client_thread(&ClientThreadClass::ThreadBody, client_cls, ip, port, i, num_orders, laptop_type);

@@ -3,31 +3,49 @@
 
 #include <iostream>
 
-// Default constructor implementation
+/*
+    You will model each customer as a thread and your client program will model multiple customers that concurrently issue orders to you factory. 
+    Your client program should take command line arguments that specify the ip address of the server, the port number of the server, the number of customers, how many orders each customer will place, and the laptop type that the customers want. 
+    The client program should take these as arguments in the following format:
+    ./client [ip addr] [port #] [# customers] [# orders] [laptop type]
+    For example,
+    ./client 123.456.789.123 12345 16 1000 0
+    means that the server ip address is 123.456.789.123, the server port number is 12345, the number of customers is 16, 
+    and each customer will place 1000 orders, where the laptop type is regular.
+
+    When the client program starts up,
+    1. The program should create the customer threads as many as the specified customer number.
+    2. Each customer thread should have a unique customer id.
+    3. Either the main thread or each customer thread can instantiate connection to the server, but the socket connection should be made once per client stub and each customer should have its own client stub instance.
+    4. The customer thread should start issuing orders and receiving laptop information as many times as the input argument using the client stub described in the previous section. The order should include the corresponding customer id, order number, and laptop type. For now, only use laptop type 0 (regular type).
+    5. Once the thread completed all of its tasks, the connection to the server should be closed and the thread should terminate.
+    By varying the number of customers you should be able to control the amount of concurrent loads on the server.
+*/
 ClientThreadClass::ClientThreadClass() {}
 
-// Implementation of ThreadBody, which executes the main functionality of the client thread
 void ClientThreadClass::
 ThreadBody(std::string ip, int port, int id, int orders, int type) {
-    customer_id = id; // Set the customer ID
-    num_orders = orders; // Set the number of orders to process
-    laptop_type = type; // Set the laptop type to order
+    customer_id = id; // 2. Each customer thread should have a unique customer id.
+    num_orders = orders; 
+    laptop_type = type; 
 
-    // Initialize the network stub for communication with the server
-    if (!stub.Init(ip, port)) {
+    // 3. Either the main thread or each customer thread can instantiate connection to the server
+    // but the socket connection should be made once per client stub and each customer should have its own client stub instance.
+    if (!stub.Init(ip, port)) { // ClientStub stub;
         std::cout << "Thread " << customer_id << " failed to connect" << std::endl;
         return; // Exit if connection to the server fails
     }
 
-    // Loop over each order
+    // 4. The customer thread should start issuing orders and receiving laptop information as many times as the input argument using the client stub described in the previous section. 
+    // The order should include the corresponding customer id, order number, and laptop type. For now, only use laptop type 0 (regular type).
     for (int i = 0; i < num_orders; i++) {
-        LaptopOrder order; // Create a new order
-        LaptopInfo laptop; // Create a variable to hold the received laptop info
-        order.SetOrder(customer_id, i, laptop_type); // Set up the order with details
+        LaptopOrder order;
+        LaptopInfo laptop;
+        order.SetOrder(customer_id, i, laptop_type);
 
-        timer.Start(); // Start timing the order process
-        laptop = stub.OrderLaptop(order); // Send the order and receive the laptop info
-        timer.EndAndMerge(); // Stop timing and merge the result into the timer
+        timer.Start(); // ClientTimer timer;
+        laptop = stub.OrderLaptop(order); // LaptopInfo ClientStub::OrderLaptop(LaptopOrder order)
+        timer.EndAndMerge(); // ClientTimer::EndAndMerge()
 
         // Check if the received laptop info is valid
         if (!laptop.IsValid()) {
@@ -37,7 +55,6 @@ ThreadBody(std::string ip, int port, int id, int orders, int type) {
     }
 }
 
-// Returns a copy of the timer object, allowing external access to timing data
 ClientTimer ClientThreadClass::GetTimer() {
     return timer;
 }
