@@ -15,13 +15,16 @@ public:
     void Init(std::unique_ptr <ServerSocket> socket);
 
     // LaptopOrder ReceiveOrder();
-
-    int SendLaptop(LaptopInfo info);
-
     CustomerRequest ReceiveRequest();
+
+    int SendLaptop(LaptopInfo info); 
+
+    int ReturnRecord(CustomerRecord record); // take a customer record and send the customer record
+
     LogRequest ReceiveLogRequest();
+
     int ReturnLogResponse(LogResponse response);
-    int ReturnRecord(CustomerRecord record);
+    
     int ReceiveIndentity();
 };
 

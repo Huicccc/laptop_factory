@@ -96,6 +96,26 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+/*
+    The number of admins per factory is fixed to 1 so the server program does not need to take the relevant argument. 
+    However, there are many additional command line arguments that the server program should take. The following summarizes the set of arguments that are necessary:
+    1. Port number,
+    2. Unique ID (≥ 0) of the factory,
+    3. Number of peer factory servers, and
+    4. Unique ID, IP, and port of all peer factory servers.
+    That is, the execution of the server program should follow the format,
+    ./server [port #] [unique ID] [# peers] (repeat [ID] [IP] [port #])
+    For example, let’s assume you are running three servers with configurations: 
+    • Server ID: 0, IP: 11.11.11.11, port: 12345
+    • Server ID: 1, IP: 22.22.22.22, port: 12345
+    • Server ID: 2, IP: 33.33.33.33, port: 12345
+    Then the three servers should run with the commands: 5
+    ./server 12345 0 2 1 22.22.22.22 12345 2 33.33.33.33 12345 
+    ./server 12345 1 2 0 11.11.11.11 12345 2 33.33.33.33 12345 
+    ./server 12345 2 2 0 11.11.11.11 12345 1 22.22.22.22 12345
+    This allows servers to find each other, and send and receive data replication requests. Through the command line argument, you should be able to configure your servers to work with arbitrary number of peers. 
+    Note that the server ID, IP, and port mapping given to each server as arguments should be consistent across all servers.
+*/
 void usage(char *argv[]) {
   std::cout << "Usage: " << argv[0]
             << " [port #] [unique ID] [# peers] (repeat [ID] [IP] [port #])"

@@ -13,10 +13,9 @@ public:
     ClientStub();
 
     int Init(std::string ip, int port);
-
-    LaptopInfo OrderLaptop(LaptopOrder order);
-
-    CustomerRecord ReadRecord(CustomerRequest order);
+ 
+    LaptopInfo Order(CustomerRequest order); // take a customer request and return laptop information.
+    CustomerRecord ReadRecord(CustomerRequest order); // take a customer request and return a customer record.
     LogResponse BackupRecord(LogRequest log);
     void Identify(int role);
 };

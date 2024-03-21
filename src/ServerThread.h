@@ -31,16 +31,24 @@ private:
     std::condition_variable erq_cv;
 
     std::mutex cr_lock;
-    std::map<int, int> customer_record;
+    std::map<int, int> customer_record; // The key of the map is the customer id, and the value is the last order number of the customer.
     std::map<int, ServerAddress> admin_map;
     bool admin_stub_init;
     std::map<int, ClientStub> admin_stub;
-    std::vector<MapOp> smr_log;
+    std::vector<MapOp> smr_log; // state machine replication log
 
-    int last_index;
-    int committed_index;
-    int primary_id;
-    int factory_id;
+    /*
+    MapOps in the smr_log are not applied to the customer record immediately, 
+    but are applied only after the MapOp has been replicated to all nodes; 
+    we regard such fully replicated MapOp as “committed.” 
+
+    In addition to the smr_log and the customer_record, all nodes keep track of the last written index of the smr_log, 
+    up to which index the MapOps in the smr_log has been committed, and which server is the production factory:
+    */
+    int last_index; // the last index of the smr_log that has data
+    int committed_index; // the last index of the smr_log where the MapOp of the log entry is committed and applied to the customer_record
+    int primary_id; // the production factory id (server id) initially set to -1.
+    int factory_id; // the id of the factory. This is assigned via the command line arguments.
 
     // LaptopInfo CreateRegularLaptop(LaptopOrder order, int engineer_id);
     LaptopInfo CreateRegularLaptop(CustomerRequest order, int engineer_id);

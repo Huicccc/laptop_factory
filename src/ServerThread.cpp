@@ -4,6 +4,22 @@
 #include "ServerThread.h"
 #include "ServerStub.h"
 
+/*
+  1. The laptop manufacturing workflow should now be:
+  (a) A customer sends a laptop order to the (regular) engineer. 
+  (b) The engineer creates a laptop (fills in laptop info).
+  (c) The engineer sends request to the admin to update the customer record and waits. 
+  (d) The admin who was waiting for requests fetches the request.
+  (e) The admin appends a necessary operation to update the customer record to the log. 
+  (f) The admin then applies the logged operation to the customer record map.
+  (g) The admin notifies record update completion with its id to the waiting engineer. 
+  (h) The engineer wakes up and ships the laptop to the customer.
+  2. The customer record reading workflow should be:
+  (a) A customer sends a record read request for its own record (a customer cannot access other customer records by default, but you will break this rule later).
+  (b) The engineer reads the corresponding record from the customer record map.
+  (c) The engineer returns the record to the customer.
+*/
+
 // LaptopInfo LaptopFactory::CreateRegularLaptop(CustomerRequest order, int engineer_id) {
 //     LaptopInfo laptop; 
 //     laptop.CopyOrder(order);

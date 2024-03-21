@@ -6,10 +6,13 @@
 // class LaptopOrder {
 class CustomerRequest {
 private:
-    int customer_id; // customer id
+    int customer_id; // For laptop order: customer id who placed order.
+                    // For read request: customer id to read from map.
     int order_number; // # of orders issued by this customer so far
-    // int laptop_type; // either 0 - regular or 1 - custom
-    int request_type;
+                      // Record-read request does not count as an order.
+                      // Set to -1 for read requests.
+    int request_type; // Either 1 - regular laptop order request
+                      // 2 - customer record read request
 
 public:
     CustomerRequest();
@@ -43,13 +46,15 @@ public:
 class LaptopInfo {
 private:
     int customer_id; // copied from the order
-    int order_number; // copied from the order
+    int order_number; // copied from the order for request_type 1
+                      // copied from the record map for request_type 2
     // int laptop_type; // copied from the order
-    int request_type;
+    int request_type; // copied from the order
     int engineer_id; // id of the engineer who created the laptop
     // int expert_id; // id of the expert who added a custom module
     //                // -1 indicates that there is no custom module
-    int admin_id;
+    int admin_id; // id of the admin who updated the record map
+                  // -1 indicates that the request was a read
 
 public:
     LaptopInfo();
@@ -100,8 +105,10 @@ public:
 
 class CustomerRecord {
 private:
-  int customer_id;
-  int last_order;
+  int customer_id; // copied from the read request
+                  // -1 if customer_id is not found in the map
+  int last_order; // copied from the map
+                  // -1 if customer_id is not found in the map      
 
 public:
   CustomerRecord();
@@ -124,11 +131,16 @@ public:
   void Print();
 };
 
+/*
+MapOp is a general structure that defines the operation that can be applied to the map and parameters for the operation. You will only use opcode 1 which updates the map. 
+For example, if opcode is 1, arg1 is 100, and arg2 is 20, then this means that find the customer record for customer number 100 in the map and update the value to 20 
+(if the customer record does not exist, create a record for the customer number 100 and assign the value 20).
+*/
 class MapOp {
 private:
-  int opcode;
-  int arg1;
-  int arg2;
+  int opcode; // operation code: 1 - update value
+  int arg1; // customer_id to apply the operation
+  int arg2; // parameter for the operation
 
 public:
   MapOp();
