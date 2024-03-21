@@ -8,11 +8,15 @@
 
 class ClientStub {
 private:
-	ClientSocket socket;
+  ClientSocket socket;
+
 public:
-	ClientStub();
-	int Init(std::string ip, int port);
-	LaptopInfo OrderLaptop(LaptopOrder order);
+  ClientStub();
+  int Init(std::string ip, int port);
+  LaptopInfo Order(CustomerRequest order);
+  CustomerRecord ReadRecord(CustomerRequest order);
+  LogResponse BackupRecord(LogRequest log);
+  void Identify(int role);
 };
 
 

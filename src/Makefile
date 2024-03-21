@@ -17,7 +17,7 @@ OBJS := $(SRCS:.cpp=.o)		# replaces .cpp extension to .o (e.g., main.cpp -> main
 # $(wildcard Server*.h) finds all file names with patterns ("Server" + random string + ".h")
 SVR_HDRS := $(wildcard Server*.h)	
 SVR_SRCS := $(wildcard Server*.cpp)
-SVR_OBJS := $(SVR_SRCS:.cpp=.o)
+SVR_OBJS := $(SVR_SRCS:.cpp=.o) ClientStub.o ClientSocket.o
 
 # $(wildcard Client*.h) finds all file names with patterns ("Client" + random string + ".h")
 CLNT_HDRS := $(wildcard Client*.h)
@@ -32,7 +32,7 @@ CMN_OBJS := $(CMN_SRCS:.cpp=.o)
 
 # -Wall prints: all warnings
 # -std=c++11: use of C++11
-CFLAGS := -Wall -std=c++11 
+CFLAGS := -Wall -std=c++11 -g
 
 # -pthread: use of posix threads (necessary to use std::thread or pthreads)
 LFLAGS := -pthread 
