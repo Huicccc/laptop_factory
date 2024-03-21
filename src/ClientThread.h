@@ -11,10 +11,15 @@
 class ClientThreadClass {
     int customer_id;
     int num_orders;
-    int laptop_type;
+    // int laptop_type;
+    int request_type;
     ClientStub stub;
 
     ClientTimer timer;
+
+    void Orders();
+    void Records();
+    void ScanRecords();
 public:
     ClientThreadClass();
 

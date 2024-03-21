@@ -15,6 +15,10 @@ public:
     int Init(std::string ip, int port);
 
     LaptopInfo OrderLaptop(LaptopOrder order);
+
+    CustomerRecord ReadRecord(CustomerRequest order);
+    LogResponse BackupRecord(LogRequest log);
+    void Identify(int role);
 };
 
 

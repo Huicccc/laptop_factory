@@ -27,7 +27,8 @@ void ClientThreadClass::
 ThreadBody(std::string ip, int port, int id, int orders, int type) {
     customer_id = id; // 2. Each customer thread should have a unique customer id.
     num_orders = orders; 
-    laptop_type = type; 
+    // laptop_type = type; 
+    request_type = type;
 
     // 3. Either the main thread or each customer thread can instantiate connection to the server
     // but the socket connection should be made once per client stub and each customer should have its own client stub instance.
@@ -36,25 +37,67 @@ ThreadBody(std::string ip, int port, int id, int orders, int type) {
         return; // Exit if connection to the server fails
     }
 
-    // 4. The customer thread should start issuing orders and receiving laptop information as many times as the input argument using the client stub described in the previous section. 
-    // The order should include the corresponding customer id, order number, and laptop type. For now, only use laptop type 0 (regular type).
-    for (int i = 0; i < num_orders; i++) {
-        LaptopOrder order;
-        LaptopInfo laptop;
-        order.SetOrder(customer_id, i, laptop_type);
-
-        timer.Start(); // ClientTimer timer;
-        laptop = stub.OrderLaptop(order); // LaptopInfo ClientStub::OrderLaptop(LaptopOrder order)
-        timer.EndAndMerge(); // ClientTimer::EndAndMerge()
-
-        // Check if the received laptop info is valid
-        if (!laptop.IsValid()) {
-            std::cout << "Invalid laptop " << customer_id << std::endl;
-            break; // Break out of the loop if an invalid laptop is received
-        }
+    stub.Identify(0);
+    if (request_type == 1) {
+        Orders();
+    } else if (request_type == 2) {
+        Records();
+    } else if (request_type == 3) {
+        ScanRecords();
     }
 }
 
 ClientTimer ClientThreadClass::GetTimer() {
     return timer;
+}
+
+void ClientThreadClass::Orders() {
+  for (int i = 0; i < num_orders; i++) {
+    CustomerRequest request;
+    LaptopInfo laptop;
+    request.SetOrder(customer_id, i, request_type);
+
+    timer.Start();
+    laptop = stub.Order(request);
+    timer.EndAndMerge();
+
+    if (!laptop.IsValid()) {
+      std::cout << "Invalid laptop " << customer_id << std::endl;
+      break;
+    }
+  }
+}
+
+void ClientThreadClass::Records() {
+  CustomerRequest request;
+  CustomerRecord record;
+  request.SetOrder(customer_id, -1, 2);
+
+  timer.Start();
+  record = stub.ReadRecord(request);
+  timer.EndAndMerge();
+
+  std::stringstream ss;
+  if (!record.IsValid()) {
+    ss << "customer " << customer_id << " not exsit" << std::endl;
+  } else {
+    ss << "customer " << customer_id << " last order "
+              << record.GetLastOrder() << std::endl;
+  }
+  std::cout << ss.str();
+}
+
+void ClientThreadClass::ScanRecords() {
+  for (int i = 0; i < num_orders; i++) {
+    CustomerRequest request;
+    CustomerRecord record;
+    request.SetOrder(i, -1, 2);
+    timer.Start();
+    record = stub.ReadRecord(request);
+    timer.EndAndMerge();
+    if (record.IsValid()) {
+      std::cout << record.GetCustomerId() << "\t" << record.GetLastOrder()
+                << std::endl;
+    }
+  }
 }
