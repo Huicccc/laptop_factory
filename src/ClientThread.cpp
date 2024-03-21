@@ -2,6 +2,7 @@
 #include "Messages.h"
 
 #include <iostream>
+#include <sstream>
 
 /*
     You will model each customer as a thread and your client program will model multiple customers that concurrently issue orders to you factory. 
@@ -21,6 +22,8 @@
     5. Once the thread completed all of its tasks, the connection to the server should be closed and the thread should terminate.
     By varying the number of customers you should be able to control the amount of concurrent loads on the server.
 */
+
+
 ClientThreadClass::ClientThreadClass() {}
 
 void ClientThreadClass::

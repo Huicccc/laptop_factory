@@ -30,7 +30,7 @@ public:
 
     int GetOrderNumber();
 
-    int GetLaptopType();
+    int GetRequestType();
 
     int Size();
 

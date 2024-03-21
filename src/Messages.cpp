@@ -21,7 +21,7 @@ int CustomerRequest::GetCustomerId() { return customer_id; }
 
 int CustomerRequest::GetOrderNumber() { return order_number; }
 
-int CustomerRequest::GetLaptopType() { return request_type; }
+int CustomerRequest::GetRequestType() { return request_type; }
 
 int CustomerRequest::Size() {
     return sizeof(customer_id) + sizeof(order_number) + sizeof(request_type);
@@ -86,7 +86,7 @@ void LaptopInfo::SetInfo(int id, int number, int type, int engid, int expid) {
 void LaptopInfo::CopyOrder(CustomerRequest order) {
     customer_id = order.GetCustomerId();
     order_number = order.GetOrderNumber();
-    request_type = order.GetLaptopType();
+    request_type = order.GetRequestType();
 }
 
 void LaptopInfo::SetEngineerId(int id) { engineer_id = id; }

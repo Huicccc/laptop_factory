@@ -27,6 +27,28 @@
 //     laptop.SetExpertId(-1); // It copies the information in the order to the laptop information and adds its own engineer id and expert id (use value -1 for now).
 //     return laptop;
 // }
+
+
+/*
+Roles within the server
+The primary node role described above should be carried out by the admin thread that is described in Section 1 and the backup node role should be handled by a new admin thread which is detailed below. 
+In short, the server program should implement three roles:
+1. Engineer: handles client requests. 
+For laptop order requests, the engineer communicates with the admin to produce laptops. 
+For customer record read request, the engineer directly accesses the customer record map and returns the requested record.
+2. Production factory admin (PFA) : 
+the admin of the production factory that sends customer record replication requests to idle factory admins. 
+In an idle factory, PFA is inactive and does nothing.
+3. Idle factory admin (IFA): 
+the admin in an idle factory that handles PFA requests. 
+The IFA in the production factory is inactive and does nothing.
+The implementation of your factory in Section 1 partially implements engineer and PFA roles already, 
+and you will have to implement the IFA role from scratch.
+
+If you carefully review the roles, you will notice that the engineer and the IFA carry out server- like operations (respond to requests) 
+and the PFA carries out client-like operations (send requests). 
+Therefore, you can implement engineer and IFA roles within the same thread and the PFA role in a separate thread.
+*/
 CustomerRecord LaptopFactory::CreateCustomerRecord(CustomerRequest request) {
   CustomerRecord record;
   int customer_id = request.GetCustomerId();
@@ -90,6 +112,26 @@ LaptopInfo LaptopFactory::CreateRegularLaptop(CustomerRequest order, int enginee
 
     If the connection is closed by the client, the thread can escape the loop and terminate. A client closing the connection can be noticed by the return value of socket recv() function. 
     When recv error occurs (including client connection close) recv returns -1. You can figure out more details about the recv errors by inspecting the errno (https://man7.org/linux/man-pages/man2/recv.2.html, https://man7.org/linux/man-pages/man3/errno.3.html).
+*/
+
+/*
+2.3.1 Role 1: engineer
+If you have completed the tasks in Section 1 the engineer role should be already implemented in the regular engineer thread from assignment #1.
+However, you should implement the IFA role in the same thread, so you will need to make changes to the engineer thread code (but not the code for the engineer role itself) accordingly.
+See Section 2.3.3 for the IFA role that should be implemented in the engineer thread side by side with the engineer role.
+
+2.3.3 Role 3: IFA
+The IFAs communicate with the PFA to replicate data. 
+The PFA will establish connections to the idle factory servers and because each server maintains only one open port for the socket connection, 
+you should figure out whether the PFA or the customer connected through the port for each connection. 
+Therefore, it makes sense to create the IFA as part of the engineer thread in Section 1 and have the customer and PFA to identify itself by sending an one-time message. 
+Depending on who is connected to the thread, you should respond with either the engineer or the IFA role.
+Once the thread figures out that its role is the IFA, it should wait for the PFA’s replication request and respond to it. 
+Note that the IFA should only apply committed entries in the log to the customer record map. Because there can be customer’s read requests to the map through the engineer thread, the map should be properly protected with locks.
+
+Note
+In a more realistic implementation, the port numbers used for laptop order and replication can be different and engineer and IFA roles would be implemented separately in different threads. 
+The design outlined above makes some compromises for the simplicity of the assignment.
 */
 void LaptopFactory::EngineerThread(std::unique_ptr <ServerSocket> socket, int id) {
     int engineer_id = id;
