@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
 
     thread_vector.push_back(std::thread(&LaptopFactory::AdminThread, &factory, admin_id));    
 
-    while ((new_socket = socket.Accept())) {
+    while ((new_socket = socket.Accept())) { // Since your server waits for clients in a loop, you can type Ctrl+c in the terminal to terminate your server program.
         std::thread engineer_thread(&LaptopFactory::EngineerThread,
                                     &factory, std::move(new_socket),
                                     engineer_cnt++);

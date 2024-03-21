@@ -23,30 +23,7 @@ struct ServerAddress {
   int port;
 };
 
-/*
-Any factory can become the production factory and you as the owner of the factories should tell the customers to send laptop order to only one of the factories 
-(You should configure the client program to send the laptop order to only one of the server program instances). 
-The factory that receives the laptop order automatically becomes the primary factory and you should assume that there is only one primary factory at any given moment: 
-e.g., you can have the client program to send 100 laptop orders to factory 0 and later in time you can have the client program to send another 100 laptop orders to factory 1, 
-but the client programs should never send laptop orders to factory 0 and 1 at the same time. 
-However, client programs can send record read requests to any servers (both primary and backup servers) concurrently at anytime.
-The replication protocol itself (does not include the laptop creation process) that you should implement works as follows assuming no failures at all.
-1. Primary receives a customer record update request.
-2. If primary id of the primary is not set to its own id, primary sets primary id to its own id and establish connections to all backup nodes.
-3. Primary appends the request to its own log and updates last index accordingly.
-4. Primary repeats the following to all backup nodes in a sequence.
-(a) Primary sends replication request “factory id, committed index, last index, MapOp” to the ith backup node.
-(b) The ith backup node,
-i. Sets primary id if it is not pointing to the current primary;
-ii. Writes MapOp to req.last index of its smr log and update self.last index;
-iii. Applies MapOp in the req.committed index of smr log to the customer record and
-update self.committed index; and
-iv. Respond back to the primary.
-(c) Primary receives response from the ith backup node.
-5. Once primary successfully communicates with n backup nodes, it applies the MapOp of
-last index in the smr log and assigns the last index value to committed index.
 
-*/
 class LaptopFactory {
 private:
     // std::queue <std::unique_ptr<ExpertRequest>> erq;
