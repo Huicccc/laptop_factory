@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <thread>
 #include <vector>
+#include <memory>
 
 #include "ClientSocket.h"
 #include "ClientThread.h"
@@ -13,7 +14,8 @@ int main(int argc, char *argv[]) {
     int port; // Port number of the server
     int num_customers; // Number of customer threads to create
     int num_orders; // Number of orders each customer will place
-    int laptop_type; // Type of laptop to order (0 for regular, 1 for custom)
+    // int laptop_type; // Type of laptop to order (0 for regular, 1 for custom)
+	int request_type;
     ClientTimer timer; // Timer for measuring overall operation time
 
     // Vectors to hold client thread objects and the threads themselves
@@ -23,7 +25,9 @@ int main(int argc, char *argv[]) {
     // Check if the correct number of arguments are passed
     if (argc < 6) {
         std::cout << "not enough arguments" << std::endl;
-        std::cout << argv[0] << "[ip] [port #] [# customers] [# orders] [laptop type 0 or 1]" << std::endl;
+        // std::cout << argv[0] << "[ip] [port #] [# customers] [# orders] [laptop type 0 or 1]" << std::endl;
+		std::cout << argv[0] << "[ip] [port #] [# customers] ";
+    	std::cout << "[# orders] [request eype 1, 2 or 3]" << std::endl;
         return 0; // Exit if not enough arguments
     }
 
@@ -32,14 +36,19 @@ int main(int argc, char *argv[]) {
     port = atoi(argv[2]);
     num_customers = atoi(argv[3]);
     num_orders = atoi(argv[4]);
-    laptop_type = atoi(argv[5]);
+    // laptop_type = atoi(argv[5]);
+	request_type = atoi(argv[5]);
+	if (request_type == 3) {
+		num_customers = 1;
+	}
 
     timer.Start(); // Start the timer for the whole operation
 
     // 1. The program should create the customer threads as many as the specified customer number.
     for (int i = 0; i < num_customers; i++) {
         auto client_cls = std::shared_ptr<ClientThreadClass>(new ClientThreadClass());
-        std::thread client_thread(&ClientThreadClass::ThreadBody, client_cls, ip, port, i, num_orders, laptop_type);
+        // std::thread client_thread(&ClientThreadClass::ThreadBody, client_cls, ip, port, i, num_orders, laptop_type);
+		std::thread client_thread(&ClientThreadClass::ThreadBody, client_cls, ip, port, i, num_orders, request_type);
 
         client_vector.push_back(std::move(client_cls)); // Store client class instance
         thread_vector.push_back(std::move(client_thread)); // Store thread
