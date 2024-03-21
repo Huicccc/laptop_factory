@@ -23,7 +23,7 @@ public:
     int Send(char *buffer, int size, int flags = 0);
     int Recv(char *buffer, int size, int flags = 0);
 
-    int NAGLE_ON(bool on_off);
+    int NagleOn(bool on_off);
     bool IsNagleOn();
 
     void Close();

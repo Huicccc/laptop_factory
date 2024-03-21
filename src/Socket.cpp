@@ -26,6 +26,7 @@ Socket::~Socket() {
 void Socket::Close() {
     shutdown(fd_, SHUT_RDWR);
     close(fd_);
+    is_initialized_ = false;
 }
 
 int Socket::Send(char *buffer, int size, int flags) {

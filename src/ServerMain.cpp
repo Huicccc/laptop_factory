@@ -1,6 +1,6 @@
-#include <chrono>
+// #include <chrono>
 #include <iostream>
-#include <mutex>
+// #include <mutex>
 #include <thread>
 #include <vector>
 
@@ -10,7 +10,8 @@
 int main(int argc, char *argv[]) {
     int port;
     int engineer_cnt = 0;
-    int num_experts;
+    int admin_id = -1;
+    int num_peers = 0;
     ServerSocket socket;
     LaptopFactory factory;
     std::unique_ptr<ServerSocket> new_socket;
@@ -30,12 +31,17 @@ int main(int argc, char *argv[]) {
         ./ server 12345 2
         indicates that the server uses port number 12345 and has 2 expert engineers.
     */
-    if (argc < 3) {
-        std::cout << "Usage: " << argv[0] << " [port #] [# experts]" << std::endl; // ./server [port #] [# experts]
+    if (argc < 4) {
+        usage(argv);
         return 0;
     }
-    port = atoi(argv[1]);
-    num_experts = atoi(argv[2]);
+    admin_id = atoi(argv[2]);
+    num_peers = atoi(argv[3]);
+
+    if (argc < 4 + num_peers * 3) {
+        usage(argv);
+        return 0;
+    }
 
     /*
         Expert engineers should be added to the server program as a thread pool. Recall that threads in a thread pool wait for tasks to arrive using guards (condition variables). 
@@ -50,11 +56,11 @@ int main(int argc, char *argv[]) {
         1. The server program creates the expert engineer request queue and the expert engineer thread pool. Expert engineer threads should be given unique ids that do not overlap with regular engineer ids.
         2. The regular engineer threads should be given ways to access the expert request queue so that requests can be sent to the expert engineer threads.
     */
-    for (int i = 0; i < num_experts; i++) {
-        std::thread expert_thread(&LaptopFactory::ExpertThread,
-                                  &factory, engineer_cnt++);
-        thread_vector.push_back(std::move(expert_thread)); // expert engineer workflow 2. An expert engineer thread pool.
-    }
+    // for (int i = 0; i < num_experts; i++) {
+    //     std::thread expert_thread(&LaptopFactory::ExpertThread,
+    //                               &factory, engineer_cnt++);
+    //     thread_vector.push_back(std::move(expert_thread)); // expert engineer workflow 2. An expert engineer thread pool.
+    // }
 
 
     /*
@@ -70,6 +76,16 @@ int main(int argc, char *argv[]) {
         std::cout << "Socket initialization failed" << std::endl;
         return 0;
     }
+
+    for (int i = 0; i < num_peers; i++) {
+        int id = atoi(argv[4 + i * 3]);
+        std::string ip = argv[5 + i * 3];
+        int port = atoi(argv[6 + i * 3]);
+        factory.AddAdmin(id, ip, port);
+    }
+
+    thread_vector.push_back(std::thread(&LaptopFactory::AdminThread, &factory, admin_id));    
+
     while ((new_socket = socket.Accept())) {
         std::thread engineer_thread(&LaptopFactory::EngineerThread,
                                     &factory, std::move(new_socket),
@@ -78,4 +94,10 @@ int main(int argc, char *argv[]) {
     }
 
     return 0;
+}
+
+void usage(char *argv[]) {
+  std::cout << "Usage: " << argv[0]
+            << " [port #] [unique ID] [# peers] (repeat [ID] [IP] [port #])"
+            << std::endl;
 }

@@ -4,12 +4,28 @@
 #include "ServerThread.h"
 #include "ServerStub.h"
 
-LaptopInfo LaptopFactory::CreateRegularLaptop(LaptopOrder order, int engineer_id) {
-    LaptopInfo laptop; 
-    laptop.CopyOrder(order);
-    laptop.SetEngineerId(engineer_id);
-    laptop.SetExpertId(-1); // It copies the information in the order to the laptop information and adds its own engineer id and expert id (use value -1 for now).
-    return laptop;
+// LaptopInfo LaptopFactory::CreateRegularLaptop(CustomerRequest order, int engineer_id) {
+//     LaptopInfo laptop; 
+//     laptop.CopyOrder(order);
+//     laptop.SetEngineerId(engineer_id);
+//     laptop.SetExpertId(-1); // It copies the information in the order to the laptop information and adds its own engineer id and expert id (use value -1 for now).
+//     return laptop;
+// }
+CustomerRecord LaptopFactory::CreateCustomerRecord(CustomerRequest request) {
+  CustomerRecord record;
+  int customer_id = request.GetCustomerId();
+  int last_order = -1;
+  {
+    std::lock_guard<std::mutex> lock(cr_lock);
+    if (customer_record.find(customer_id) != customer_record.end()) {
+      last_order = customer_record[customer_id];
+    } else {
+      last_order = -1;
+      customer_id = -1;
+    }
+  }
+  record.SetCustomerRecord(customer_id, last_order);
+  return record;
 }
 
 /*
@@ -23,13 +39,16 @@ LaptopInfo LaptopFactory::CreateRegularLaptop(LaptopOrder order, int engineer_id
     6. Mechanisms for expert engineers to wake up the specific engineer who sent the request.
     7. Mechanisms for expert engineers to notify their ids to the regular engineer who sent the request.
 */
-LaptopInfo LaptopFactory::CreateCustomLaptop(LaptopOrder order, int engineer_id) {
+// LaptopInfo LaptopFactory::CreateCustomLaptop(LaptopOrder order, int engineer_id) { 
+LaptopInfo LaptopFactory::CreateRegularLaptop(CustomerRequest order, int engineer_id) {    
     LaptopInfo laptop;
     laptop.CopyOrder(order);
     laptop.SetEngineerId(engineer_id);
 
+    laptop.SetAdminId(-1);
+
     // 7. Mechanisms for expert engineers to notify their ids to the regular engineer who sent the request. promise - future
-    std::unique_ptr <ExpertRequest> req = std::unique_ptr<ExpertRequest>(new ExpertRequest);
+    std::unique_ptr <AdminRequest> req = std::unique_ptr<AdminRequest>(new AdminRequest);
     std::promise <LaptopInfo> prom;
     std::future <LaptopInfo> fut = prom.get_future(); // Future to asynchronously receive the result
     req->laptop = laptop; // Attach the current laptop info
@@ -58,40 +77,92 @@ LaptopInfo LaptopFactory::CreateCustomLaptop(LaptopOrder order, int engineer_id)
 */
 void LaptopFactory::EngineerThread(std::unique_ptr <ServerSocket> socket, int id) {
     int engineer_id = id;
+
+    int request_type;
+    CustomerRequest request;
+    CustomerRecord record;
+    LogRequest log_req;
+    LaptopInfo laptop;
+
     ServerStub stub; // The thread uses the server stub to communicate with the client.
     stub.Init(std::move(socket)); 
-    while (true) { // Each engineer thread implements a loop that continuously processes orders until the client closes the connection. 
-        LaptopOrder order = stub.ReceiveOrder(); // 1. The thread waits for the client’s order to arrive.
-        if (!order.IsValid()) { // Break the loop if the order is invalid
-            break;
-        }
-
-        // The regular engineer thread should be modified so that it can communicate with the expert engineers, when needed. Necessary additions include,
-        // 1. Checking the laptop type in the order and if it is a regular laptop type, then follow the workflow in the previous section.
-        // 2. If the laptop type is custom, then send a request to expert engineer threads by enqueuing the request to the expert engineer request queue. 
-        // Next, wait for an expert engineer thread to respond back. Once the response is received, the regular engineer thread sends back the laptop information with added expert id to the customer.
-        int laptop_type = order.GetLaptopType();
-        LaptopInfo laptop;
-        switch (laptop_type) {
-            case 0: // Regular laptop
-                laptop = CreateRegularLaptop(order, engineer_id); // 2. Once the order is received, it starts filling in the laptop information for the order. 
+    int identity = stub.ReceiveIndentity();
+    // std::cout << "Engineer " << engineer_id << " is " << identity << std::endl;  
+    if (identity == 0) {
+        while (true) { // Each engineer thread implements a loop that continuously processes orders until the client closes the connection. 
+            request = stub.ReceiveRequest(); // 1. The thread waits for the client’s order to arrive.
+            if (!request.IsValid()) { // Break the loop if the order is invalid
                 break;
-            case 1: // Custom laptop
-                laptop = CreateCustomLaptop(order, engineer_id);
+            }
+
+            // The regular engineer thread should be modified so that it can communicate with the expert engineers, when needed. Necessary additions include,
+            // 1. Checking the laptop type in the order and if it is a regular laptop type, then follow the workflow in the previous section.
+            // 2. If the laptop type is custom, then send a request to expert engineer threads by enqueuing the request to the expert engineer request queue. 
+            // Next, wait for an expert engineer thread to respond back. Once the response is received, the regular engineer thread sends back the laptop information with added expert id to the customer.
+            // int laptop_type = order.GetLaptopType();
+            // LaptopInfo laptop;
+            request_type = request.GetRequestType();
+            switch (request_type) {
+                // case 0: // Regular laptop
+                //     laptop = CreateRegularLaptop(order, engineer_id); // 2. Once the order is received, it starts filling in the laptop information for the order. 
+                //     break;
+                // case 1: // Custom laptop
+                //     laptop = CreateCustomLaptop(order, engineer_id);
+                //     break;
+                // default:
+                //     std::cout << "Undefined laptop type: " << laptop_type << std::endl;
+            case 1:
+                laptop = CreateRegularLaptop(request, engineer_id);
+                stub.SendLaptop(laptop);
+                break;
+            case 2:
+                record = CreateCustomerRecord(request);
+                stub.ReturnRecord(record);
                 break;
             default:
-                std::cout << "Undefined laptop type: " << laptop_type << std::endl;
-        }
+                std::cout << "Undefined laptop type: " << request_type << std::endl;                
+            }
+            // stub.SendLaptop(laptop); // 3. Then the laptop information is sent back to the client.
+        }        
+    } else if (identity == 1) {  // IFA
+        while (true) {
+            log_req = stub.ReceiveLogRequest();
+            if (!log_req.IsValid()) {
+                break;
+            }
+            if (primary_id != log_req.GetFactoryId()) {
+                primary_id = log_req.GetFactoryId();
+            }
+            MapOp op = log_req.GetMapOp();
+            smr_log.emplace_back(op);
+            last_index = log_req.GetLastIndex();
+            committed_index = log_req.GetCommittedIndex();
+            if (committed_index >= 0) {
+                std::lock_guard<std::mutex> lock(cr_lock);
+                MapOp to_apply = smr_log[committed_index];
+                customer_record[to_apply.GetArg1()] = to_apply.GetArg2();
+            }
 
-        stub.SendLaptop(laptop); // 3. Then the laptop information is sent back to the client.
-    }
+            LogResponse resp;
+            resp.SetFactoryId(factory_id);
+            stub.ReturnLogResponse(resp);
+        }
+    } else {
+        std::cout << "Undefined identity: " << identity << std::endl;
+    }  
 }
 
 // Each expert engineer thread in the thread pool should work as follows.
 // 1. It waits for requests to arrive in the queue.
 // 2. Once a request is detected and successfully received, the expert engineer thread works on the laptop for at least 100 microseconds (implement this using std::this thread::sleep for()) and add expert id into the laptop information. 
 // Then it responds back to the regular engineer thread that originally sent the request with the completed laptop information.
-void LaptopFactory::ExpertThread(int id) {
+void LaptopFactory::AdminThread(int id) {
+    last_index = -1;
+    committed_index = -1;
+    primary_id = -1;
+    factory_id = id;
+    admin_stub_init = false;    
+
     std::unique_lock <std::mutex> ul(erq_lock, std::defer_lock);
     while (true) { // 1. It waits for requests to arrive in the queue. 2. Once a request is detected and successfully received
         ul.lock();
@@ -107,7 +178,67 @@ void LaptopFactory::ExpertThread(int id) {
 
         std::this_thread::sleep_for(std::chrono::microseconds(100)); // the expert engineer thread works on the laptop for at least 100 microseconds (implement this using std::this thread::sleep for())
 
-        req->laptop.SetExpertId(id); // 7. Mechanisms for expert engineers to notify their ids to the regular engineer who sent the request.
-        req->prom.set_value(req->laptop); // 6. Mechanisms for expert engineers to wake up the specific engineer who sent the request. fut.get();
+        // req->laptop.SetExpertId(id); // 7. Mechanisms for expert engineers to notify their ids to the regular engineer who sent the request.
+        // req->prom.set_value(req->laptop); // 6. Mechanisms for expert engineers to wake up the specific engineer who sent the request. fut.get();
+        PFA(req->laptop);
+        req->laptop.SetAdminId(id);
+        req->prom.set_value(req->laptop);
     }
+}
+
+void LaptopFactory::AddAdmin(int id, std::string ip, int port) {
+  ServerAddress addr;
+  addr.ip = ip;
+  addr.port = port;
+  admin_map[id] = addr;
+}
+
+LogRequest LaptopFactory::CreateLogRequest(MapOp op) {
+  LogRequest request;
+  request.SetFactoryId(factory_id);
+  request.SetLastIndex(last_index);
+  request.SetCommittedIndex(committed_index);
+  request.SetMapOp(op);
+  return request;
+}
+
+void LaptopFactory::PFA(LaptopInfo &laptop) {
+  if (primary_id != factory_id) {
+    primary_id = factory_id;
+  }
+
+  if (!admin_stub_init) {
+    for (auto &admin : admin_map) {
+      const ServerAddress &addr = admin.second;
+      int ret = admin_stub[admin.first].Init(addr.ip, addr.port);
+      if (!ret) {
+        // std::cout << "Failed to connect to admin " << admin.first << std::endl;
+      } else {
+        admin_stub[admin.first].Identify(1);
+      }
+    }
+    admin_stub_init = true;
+  }
+
+  MapOp op;
+  op.SetMapOp(1, laptop.GetCustomerId(), laptop.GetOrderNumber());
+  smr_log.emplace_back(op);
+  last_index = smr_log.size() - 1;
+
+  LogRequest request = CreateLogRequest(op);
+  for (auto iter = admin_stub.begin(); iter != admin_stub.end();) {
+    LogResponse resp = iter->second.BackupRecord(request);
+    if (!resp.IsValid()) {
+      // std::cout << "Failed to backup record to admin " << iter->first
+      //           << std::endl;
+      iter = admin_stub.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+  {
+    std::lock_guard<std::mutex> lock(cr_lock);
+    customer_record[laptop.GetCustomerId()] = laptop.GetOrderNumber();
+  }
+  committed_index = last_index;
 }
